@@ -1,10 +1,10 @@
 import jwt
 import os
-from sqlmodel import SQLModel, Session, Field, create_engine
+from sqlmodel import Session, create_engine
 from models import BotTable
-import uuid
-from datetime import date, datetime
-
+from schemas import CreateBot, CreatedBot
+from typing import List
+from typing import List
 
 class Bot:
     def __init__(self, token, secret=os.getenv("SECRET_KEY")):
@@ -33,50 +33,45 @@ class Bot:
 
     def query_bot_info(self, engine_url=os.getenv("DATABASE_URL")):
         engine = create_engine(engine_url)
-        session = Session(engine)
 
-        try:
+        with Session(engine) as session:
             row = session.query(BotTable).filter(BotTable.bot_id == self.bot_id).first()
             if not row:
-                raise ValueError(f"Bot with ID '{self.bot_id}' not found in DB.")
+                raise ValueError(f"Bot not found")
 
             self.bot_name = row.bot_name
             self.bot_dob = row.bot_dob
             self.bot_key = row.bot_key
             self.bot_role = row.bot_role
 
-        finally:
-            session.close()
-
         return self
 
+@classmethod
+def create_bot(cls, creation_data: List[CreateBot], secret=os.getenv("SECRET_KEY"), engine_url=os.getenv("DATABASE_URL")) -> List[CreatedBot]:
+    engine = create_engine(engine_url)
+    created_bots = []
 
-    @classmethod
-    def create_bot(cls, creation_data: dict, secret=os.getenv("SECRET_KEY"), engine_url=os.getenv("DATABASE_URL")):
-
-        engine = create_engine(engine_url)
-        with Session(engine) as session:
-            new_bot_id = str(uuid.uuid4())
-            bot_dob = creation_data.get("bot_dob")
-            if isinstance(bot_dob, str):
-                bot_dob = date.fromisoformat(bot_dob)
+    with Session(engine) as session:
+        for data in creation_data:
             new_bot = BotTable(
-                bot_id=new_bot_id,
-                bot_name=creation_data.get("bot_name"),
-                bot_dob=bot_dob,
-                bot_key=creation_data.get("bot_key"),
-                bot_role=creation_data.get("bot_role")
+                bot_id=data.bot_id,
+                bot_name=data.bot_name,
+                bot_key=data.bot_key,
+                bot_role=data.bot_role
             )
             session.add(new_bot)
             session.commit()
             session.refresh(new_bot)
 
-        token_payload = {
-            "bot_id": new_bot.bot_id,
-            "bot_name": new_bot.bot_name,
-            "bot_role": new_bot.bot_role,
-            "iat": datetime.utcnow().timestamp()
-        }
-        token = jwt.encode(token_payload, secret, algorithm="HS256")
-        return cls(token, secret)
+            token = jwt.encode({"bot_id": new_bot.bot_id}, secret, algorithm="HS512")
 
+            created_bot = CreatedBot(
+                bot_id=new_bot.bot_id,
+                bot_name=new_bot.bot_name,
+                bot_key=new_bot.bot_key,
+                bot_role=new_bot.bot_role,
+                bot_token=token
+            )
+            created_bots.append(created_bot)
+
+    return created_bots

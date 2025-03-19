@@ -1,7 +1,11 @@
 import os
 from fastapi import FastAPI, Header
+from bot import Bot
 import uvicorn
 import subprocess
+from schemas import CreateBot
+from typing import List
+
 
 
 app = FastAPI(debug=True)
@@ -28,12 +32,15 @@ def get_messages(token: str = Header(..., convert_underscores=False)):
     pass
 
 @app.get("/create_bot")
-def create_bot(token: str = Header(..., convert_underscores=False)):
-    pass
+def create_bot(create_bot: List[CreateBot]):
+    for bot in create_bot:
+        Bot.create_bot(bot)
+
+    
 
 @app.get("/send_message")
 def send_message(token: str = Header(..., convert_underscores=False)):
-    pass
+
 
 
 if __name__ == "__main__":
