@@ -1,12 +1,13 @@
 import jwt
 import os
-from sqlmodel import Session, create_engine
+from sqlmodel import Session, create_engine, select
 from models import BotTable
 from schemas import CreateBot, CreatedBot
-from typing import List
+from datetime import datetime, timezone
 from typing import List
 
 class Bot:
+
     def __init__(self, token, secret=os.getenv("SECRET_KEY")):
         self.token = token
         self.decoded_token = self.decode_token(secret)
@@ -23,6 +24,7 @@ class Bot:
         if not self.bot_id:
             raise "The bot ID is missing from the token."
 
+
     def decode_token(self, secret):
         try:
             return jwt.decode(self.token, secret, algorithms=["HS256"])
@@ -31,11 +33,14 @@ class Bot:
         except jwt.InvalidTokenError:
             return "Error: Invalid token."
 
+
     def query_bot_info(self, engine_url=os.getenv("DATABASE_URL")):
         engine = create_engine(engine_url)
 
         with Session(engine) as session:
-            row = session.query(BotTable).filter(BotTable.bot_id == self.bot_id).first()
+            statement = select(BotTable).where(BotTable.bot_id == self.bot_id)
+            result = session.exec(statement)
+            row = result.first()
             if not row:
                 raise ValueError(f"Bot not found")
 
@@ -46,32 +51,34 @@ class Bot:
 
         return self
 
-@classmethod
-def create_bot(cls, creation_data: List[CreateBot], secret=os.getenv("SECRET_KEY"), engine_url=os.getenv("DATABASE_URL")) -> List[CreatedBot]:
-    engine = create_engine(engine_url)
-    created_bots = []
 
-    with Session(engine) as session:
-        for data in creation_data:
-            new_bot = BotTable(
-                bot_id=data.bot_id,
-                bot_name=data.bot_name,
-                bot_key=data.bot_key,
-                bot_role=data.bot_role
-            )
-            session.add(new_bot)
-            session.commit()
-            session.refresh(new_bot)
+    @classmethod
+    def create_bot(cls, creation_data: List[CreateBot], secret=os.getenv("SECRET_KEY"), engine_url=os.getenv("DATABASE_URL")) -> List[CreatedBot]:
+        engine = create_engine(engine_url)
+        created_bots = []
 
-            token = jwt.encode({"bot_id": new_bot.bot_id}, secret, algorithm="HS512")
+        with Session(engine) as session:
+            for data in creation_data:
+                new_bot = BotTable(
+                    bot_id=data.bot_id,
+                    bot_name=data.bot_name,
+                    bot_key=data.bot_key,
+                    bot_role=data.bot_role,
+                    bot_dob=datetime.now(timezone.utc)
+                )
+                session.add(new_bot)
+                session.commit()
+                session.refresh(new_bot)
 
-            created_bot = CreatedBot(
-                bot_id=new_bot.bot_id,
-                bot_name=new_bot.bot_name,
-                bot_key=new_bot.bot_key,
-                bot_role=new_bot.bot_role,
-                bot_token=token
-            )
-            created_bots.append(created_bot)
+                token = jwt.encode({"bot_id": new_bot.bot_id}, secret, algorithm="HS512")
 
-    return created_bots
+                created_bot = CreatedBot(
+                    bot_id=new_bot.bot_id,
+                    bot_name=new_bot.bot_name,
+                    bot_key=new_bot.bot_key,
+                    bot_role=new_bot.bot_role,
+                    bot_token=token
+                )
+                created_bots.append(created_bot)
+
+        return created_bots

@@ -3,7 +3,7 @@ from fastapi import FastAPI, Header
 from bot import Bot
 import uvicorn
 import subprocess
-from schemas import CreateBot
+from schemas import CreateBot, CreatedBot
 from typing import List
 
 
@@ -31,16 +31,15 @@ def read_root():
 def get_messages(token: str = Header(..., convert_underscores=False)):
     pass
 
-@app.get("/create_bot")
-def create_bot(create_bot: List[CreateBot]):
-    for bot in create_bot:
-        Bot.create_bot(bot)
 
-    
+@app.post("/create_bot")
+def create_bot(create_bots: List[CreateBot], response_model=List[CreatedBot]):
+    created_bots = Bot.create_bot(create_bots)
+    return created_bots
 
 @app.get("/send_message")
 def send_message(token: str = Header(..., convert_underscores=False)):
-
+    pass
 
 
 if __name__ == "__main__":

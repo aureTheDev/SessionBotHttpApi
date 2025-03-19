@@ -4,3 +4,4 @@ sqlmodel
 mysql-connector-python
 pymysql
 cryptography
+PyJWT
