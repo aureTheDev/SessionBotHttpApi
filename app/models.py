@@ -23,7 +23,7 @@ class BotTable(SQLModel, table=True):
             server_default=text("CURRENT_TIMESTAMP")
         )
     )
-    bot_key: str = Field(
+    bot_mnemonic: str = Field(
         ...,
         sa_column=Column(String(255), nullable=False, unique=True)
     )

@@ -14,7 +14,7 @@ class Bot:
         self.bot_id = None
         self.bot_name = None
         self.bot_dob = None
-        self.bot_key = None
+        self.bot_mnemonic = None
         self.bot_role = None
 
         if not self.decoded_token:
@@ -46,7 +46,7 @@ class Bot:
 
             self.bot_name = row.bot_name
             self.bot_dob = row.bot_dob
-            self.bot_key = row.bot_key
+            self.bot_mnemonic = row.bot_mnemonic
             self.bot_role = row.bot_role
 
         return self
@@ -62,7 +62,7 @@ class Bot:
                 new_bot = BotTable(
                     bot_id=data.bot_id,
                     bot_name=data.bot_name,
-                    bot_key=data.bot_key,
+                    bot_mnemonic=data.bot_mnemonic,
                     bot_role=data.bot_role,
                     bot_dob=datetime.now(timezone.utc)
                 )
@@ -75,7 +75,7 @@ class Bot:
                 created_bot = CreatedBot(
                     bot_id=new_bot.bot_id,
                     bot_name=new_bot.bot_name,
-                    bot_key=new_bot.bot_key,
+                    bot_mnemonic=new_bot.bot_mnemonic,
                     bot_role=new_bot.bot_role,
                     bot_token=token
                 )
