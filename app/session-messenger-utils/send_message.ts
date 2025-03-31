@@ -1,14 +1,17 @@
 import { Session, ready } from '@session.js/client'
+import { SignalService } from '@session.js/types/signal-bindings';
 await ready
 
-const mnemonic = 'afield foamy abrasive goes idols knife bowling saga wildly emotion queen casket idols'
-const recipient = process.argv[2]
+const mnemonic = process.argv[2]
+const name = process.argv[3]
+const recipient = process.argv[4]
+const text = process.argv[5]
+
 
 const session = new Session()
-session.setMnemonic(mnemonic, 'test bot')
+session.setMnemonic(mnemonic, name)
 const response = await session.sendMessage({
     to: recipient,
-    text: 'Hello world'
+    text: text
 })
-
-console.log('Sent message with id', response.messageHash)
+console.log(response)

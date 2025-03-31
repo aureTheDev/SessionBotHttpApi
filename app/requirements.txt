@@ -1,7 +1,5 @@
 fastapi
 uvicorn
-sqlmodel
-mysql-connector-python
-pymysql
 cryptography
 PyJWT
+pydantic

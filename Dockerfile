@@ -7,7 +7,7 @@ RUN apt update && apt install -y curl unzip && \
 
 WORKDIR /app
 
-COPY . .
+COPY ./app .
 
 
 RUN bun init --yes --cwd /app/session-messenger-utils
